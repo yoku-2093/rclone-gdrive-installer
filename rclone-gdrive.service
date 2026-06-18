@@ -1,0 +1,19 @@
+[Unit]
+Description=rclone Google Drive Mount
+After = network-online.target
+Wants = network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=%h/.config/systemd/user/.env
+
+ExecStart=/usr/bin/rclone mount ${GDRIVE_DIR} %h/${LOCAL_MOUNT_DIR} \
+    --vfs-cache-mode full \
+    --vfs-cache-max-size 5G \
+    --allow-other --read-only
+ExecStop=/usr/bin/fusermount -u %h/${LOCAL_MOUNT_DIR}
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target
