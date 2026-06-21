@@ -1,19 +1,32 @@
 [Unit]
-Description=rclone Google Drive Mount
+Description=rclone Google Drive Sync (download remote to local)
 After = network-online.target
 Wants = network-online.target
 
 [Service]
-Type=simple
+Type=oneshot
 EnvironmentFile=%h/.config/systemd/user/.env
 
-ExecStart=/usr/bin/rclone mount ${GDRIVE_DIR} %h/${LOCAL_MOUNT_DIR} \
-    --vfs-cache-mode full \
-    --vfs-cache-max-size 5G \
-    --allow-other --read-only
-ExecStop=/usr/bin/fusermount -u %h/${LOCAL_MOUNT_DIR}
+# リモート(GDRIVE_DIR)の内容をローカル(LOCAL_SYNC_DIR)へ同期(ダウンロード)します。
+# ローカル側はリモートに一致するように更新され、リモートに無いファイルは削除されます。
+#
+# 各オプションの意味:
+#   --transfers 4    : 同時にダウンロードするファイル数。多いほど速いがメモリ/帯域を消費。
+#   --checkers 8     : 差分チェック(更新有無の比較)を並列実行する数。
+#   --fast-list      : ファイル一覧をまとめて取得しAPI呼び出しを削減(メモリは多めに使用)。
+#   --max-size 100M   : 1ファイルあたりのサイズ上限。これより大きいファイルは同期対象外。
+#                      ※ローカル合計容量の上限ではなく「1ファイル単位」の上限です。
+#   --log-level INFO : ログの詳細度(journalctl で確認可能)。
+ExecStart=/usr/bin/rclone sync ${GDRIVE_DIR} %h/${LOCAL_SYNC_DIR} \
+    --transfers 4 \
+    --checkers 8 \
+    --fast-list \
+    --max-size 100M \
+    --log-level INFO
+
+# 同期そのものが失敗した場合のみ自動リトライ
 Restart=on-failure
-RestartSec=10
+RestartSec=30
 
 [Install]
 WantedBy=default.target

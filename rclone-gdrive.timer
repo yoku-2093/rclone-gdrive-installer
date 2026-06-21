@@ -1,0 +1,13 @@
+[Unit]
+Description=Periodic rclone Google Drive sync
+
+[Timer]
+# 起動の2分後に初回同期
+OnBootSec=2min
+# 直前の同期完了から15分後に再同期（間隔を変えたい場合はここを編集）
+OnUnitActiveSec=15min
+# マシンが停止していて実行を逃した分は次回起動時に1回だけ実行
+Persistent=true
+
+[Install]
+WantedBy=timers.target
